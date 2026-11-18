@@ -1,0 +1,169 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Personal Assistant</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <h1 class="mainheading">AI Personal Assistant</h1>
+
+    <div class="container">
+
+        <!-- Ask Anything -->
+        <h2>ASK ANYTHING</h2>
+
+        <form id="askForm">
+            <input
+                type="text"
+                name="question"
+                placeholder="Ask anything..."
+                required
+            >
+            <button type="submit">Ask</button>
+        </form>
+
+        <p id="ask-loading" style="display:none">
+            Processing...
+        </p>
+
+        <p id="answer"></p>
+
+
+        <!-- Email Summarizer -->
+        <h2>Summarize Email</h2>
+
+        <form id="emailForm">
+            <textarea
+                name="question"
+                placeholder="Paste your email here..."
+                required
+            ></textarea>
+
+            <button type="submit">Summarize</button>
+        </form>
+
+        <p id="summary-loading" style="display:none">
+            Processing...
+        </p>
+
+        <p id="summary"></p>
+
+    </div>
+
+    <script>
+
+        // Reusable function to send requests
+        async function sendRequest(url, formData) {
+
+            let res = await fetch(url, {
+                method: "POST",
+                body: formData
+            });
+
+            // Read the response
+            let data;
+
+            try {
+                data = await res.json();
+            }
+            catch {
+                throw new Error("Server returned an invalid response.");
+            }
+
+            // Check for HTTP errors
+            if (!res.ok) {
+                throw new Error(
+                    data.error || "Something went wrong."
+                );
+            }
+
+            return data;
+        }
+
+
+        // ASK ANYTHING
+        document.getElementById("askForm").onsubmit = async (e) => {
+
+            e.preventDefault();
+
+            let formData = new FormData(e.target);
+
+            let loading = document.getElementById("ask-loading");
+            let answer = document.getElementById("answer");
+            let button = e.target.querySelector("button");
+
+            loading.style.display = "block";
+            answer.innerText = "";
+            button.disabled = true;
+
+            try {
+
+                let data = await sendRequest("/ask", formData);
+
+                answer.innerText = data.response;
+
+            }
+            catch (error) {
+
+                answer.innerText = "Error: " + error.message;
+                console.error(error);
+
+            }
+            finally {
+
+                loading.style.display = "none";
+                button.disabled = false;
+
+            }
+
+        };
+
+
+        // SUMMARIZE EMAIL
+        document.getElementById("emailForm").onsubmit = async (e) => {
+
+            e.preventDefault();
+
+            let formData = new FormData(e.target);
+
+            let loading = document.getElementById("summary-loading");
+            let summary = document.getElementById("summary");
+            let button = e.target.querySelector("button");
+
+            loading.style.display = "block";
+            summary.innerText = "";
+            button.disabled = true;
+
+            try {
+
+                let data = await sendRequest("/summarize", formData);
+
+                // Supports either "summary" or "response"
+                summary.innerText = data.summary || data.response;
+
+            }
+            catch (error) {
+
+                summary.innerText = "Error: " + error.message;
+                console.error(error);
+
+            }
+            finally {
+
+                loading.style.display = "none";
+                button.disabled = false;
+
+            }
+
+        };
+
+    </script>
+
+</body>
+</html>
